@@ -3,16 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <h1>Login</h1>
-    <form action="/login" method="post">
-        <input type="text" name="username" placeholder="Usuário" required>
-        <input type="password" name="password" placeholder="Senha" required>
-        <button type="submit">Entrar</button>
-    </form>
-    <% if (error) { %>
-        <p style="color: red;"><%= error %></p>
-    <% } %>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<body class="bg-gradient-to-r from-blue-100 to-purple-200 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
+        <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">Login</h1>
+        <form action="/login" method="post" class="flex flex-col space-y-4">
+            <input
+                type="text"
+                name="username"
+                placeholder="Usuário"
+                required
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+            >
+            <input
+                type="password"
+                name="password"
+                placeholder="Senha"
+                required
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+            >
+            <button
+                type="submit"
+                class="bg-purple-500 text-white py-2 rounded-lg hover:bg-purple-600 transition duration-300"
+            >
+                Entrar
+            </button>
+        </form>
+
+        <% if (error) { %>
+            <p class="mt-4 text-red-600 text-center"><%= error %></p>
+        <% } %>
+    </div>
 </body>
 </html>
+

@@ -3,11 +3,13 @@ function confirmDelete(taskId) {
         fetch(`/delete/${taskId}`, {
             method: 'DELETE',
         })
-        .then(response => {
-            if (response.ok) {
-                window.location.reload();
+        .then(response => response.json())  // Parse do JSON
+        .then(data => {
+            if (data.message === 'Tarefa excluída com sucesso.') {
+                alert(data.message); // Exibe uma mensagem de sucesso
+                window.location.reload(); // Recarrega a página após excluir
             } else {
-                console.error('Erro ao apagar a tarefa');
+                console.error('Erro ao apagar a tarefa:', data.message);
             }
         })
         .catch(error => {

@@ -12,6 +12,7 @@ function authMiddleware(req, res, next) {
     next();
 }
 
+
 // Página de login
 routes.get("/login", (req, res) => {
     res.render("login", { error: null });
