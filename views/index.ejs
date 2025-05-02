@@ -1,28 +1,40 @@
 <!DOCTYPE html>
 <html lang="pt-br">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>To Do List</title>
     <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <form action="/create" method="post">
-      <input
-        type="text"
-        name="task"
-        id="task"
-        placeholder="Insira uma tarefa"
-      />
-      <button id="addButton" type="submit">Adicionar</button>
-    </form>
+</head>
+<body>
+    <header>
+        <form action="/create" method="post">
+            <input
+                type="text"
+                name="task"
+                id="task"
+                placeholder="Insira uma tarefa"
+                <% if (task) { %> value="<%= task.task %>" <% } %>
+            />
+            <button id="addButton" type="submit"><%= task ? 'Editar' : 'Adicionar' %></button>
+            <% if (task) { %>
+                <a href="/">Cancelar</a>
+            <% } %>
+        </form>
+    </header>
 
-    <ul>
-      <% tasksList.forEach((task) => { %>
-        <li><%= task.task %> | <%= task.date.toLocaleDateString('pt-BR') %></li>
-      <% }) %>
-    </ul>
+    <section id="tasks">
+        <ul>
+            <% tasksList.forEach((task) => { %>
+                <li>
+                    <%= task.task %> | <%= task.date.toLocaleDateString('pt-BR') %>
+                    <a href="/getById/<%= task._id %>">Editar</a>
+                    <button onclick="confirmDelete('<%= task._id %>')">Apagar</button> 
+                </li>
+            <% }) %>
+        </ul>
+    </section>
 
     <script src="script.js"></script>
-  </body>
+</body>
 </html>
