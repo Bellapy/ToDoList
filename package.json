@@ -18,8 +18,10 @@
   },
   "homepage": "https://github.com/Bellapy/ToDoList#readme",
   "dependencies": {
+    "bcrypt": "^5.1.1",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
+    "express-session": "^1.18.1",
     "mongoose": "^8.14.1",
     "nodemon": "^3.1.10"
   }
