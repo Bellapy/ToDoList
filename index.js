@@ -1,3 +1,4 @@
+require('dotenv').config(); // Carrega as variáveis do arquivo .env para process.env
 const express = require("express");
 const path = require("path");
 const session = require("express-session"); 
@@ -6,13 +7,13 @@ const conectToDb = require("./database/db");
 
 conectToDb();
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use(session({                       
-  secret: 'chave-simples',
+  secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true
 }));
