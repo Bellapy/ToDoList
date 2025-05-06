@@ -1,0 +1,333 @@
+openapi: 3.0.0
+info:
+  title: Minha API de Lista de Tarefas
+  version: v1.0
+  description: API para gerenciar uma lista de tarefas pessoais. Requer login para acessar a maioria das funcionalidades.
+  contact:
+    name: isabella
+    email: isabella.emerichs@gmail.com
+
+servers:
+  - url: http://localhost:3000 # Ou a URL de produção, se houver
+    description: Servidor de Desenvolvimento Local
+
+components:
+  schemas:
+    Task:
+      type: object
+      required:
+        - task
+        - check # No seu model está como 'require: true', o que é um erro de digitação, deveria ser 'required: true' ou apenas o tipo. Vou assumir que é obrigatório.
+      properties:
+        _id:
+          type: string
+          format: ObjectId # Comum em MongoDB, ou 'string' se for um ID genérico
+          description: ID único da tarefa gerado pelo sistema.
+          readOnly: true
+        task:
+          type: string
+          description: A descrição da tarefa.
+          example: "Comprar leite"
+        check:
+          type: boolean
+          description: Indica se a tarefa foi concluída.
+          default: false
+        date:
+          type: string
+          format: date-time
+          description: Data e hora em que a tarefa foi criada ou última atualização (depende da lógica do seu model).
+          readOnly: true
+          example: "2023-10-27T10:30:00Z"
+
+    TaskInput: # Schema para criar/atualizar tarefas
+      type: object
+      required:
+        - task
+      properties:
+        task:
+          type: string
+          description: A descrição da tarefa a ser criada ou atualizada.
+          example: "Estudar OpenAPI"
+        check: # Incluindo 'check' como opcional na entrada para atualização
+          type: boolean
+          description: Status de conclusão da tarefa (para atualização).
+          example: true
+
+    User:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: Nome de usuário.
+        password:
+          type: string
+          format: password
+          description: Senha do usuário (apenas para criação/login, não retornado).
+
+    LoginCredentials:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: "meu_usuario"
+        password:
+          type: string
+          format: password
+          example: "minha_senha123"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Mensagem de erro.
+        message: # Para o caso do deleteTask
+          type: string
+          description: Mensagem informativa.
+
+  securitySchemes:
+    cookieAuth: # Descrevendo a autenticação baseada em sessão/cookie
+      type: apiKey # Usamos apiKey como uma forma de representar, já que OpenAPI não tem um tipo 'session' direto
+      in: cookie
+      name: connect.sid # Nome padrão do cookie de sessão do express-session, pode variar
+      description: Autenticação via cookie de sessão estabelecido após o login bem-sucedido.
+
+security: # Aplica a autenticação de sessão globalmente para os endpoints protegidos
+  - cookieAuth: []
+
+paths:
+  /login:
+    get:
+      summary: Página de Login
+      description: Renderiza a página de login. (Esta rota retorna HTML)
+      tags:
+        - Autenticação
+      responses:
+        '200':
+          description: Página de login renderizada com sucesso.
+          content:
+            text/html: {} # Indica que a resposta é HTML
+    post:
+      summary: Processa o Login do Usuário
+      description: Autentica o usuário e estabelece uma sessão. Em caso de sucesso, redireciona para '/'. Em caso de falha, renderiza a página de login com erro.
+      tags:
+        - Autenticação
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded: # O login é feito via formulário HTML
+            schema:
+              $ref: '#/components/schemas/LoginCredentials'
+          application/json: # Adicionando caso você queira suportar login via JSON também
+            schema:
+              $ref: '#/components/schemas/LoginCredentials'
+      responses:
+        '302': # Código de redirecionamento
+          description: Login bem-sucedido, redirecionado para a página principal.
+          headers:
+            Location:
+              schema:
+                type: string
+              description: URL para a qual o usuário é redirecionado (/)
+        '200': # Se o login falhar e renderizar a página novamente com erro
+          description: Falha no login, página de login renderizada com mensagem de erro.
+          content:
+            text/html: {}
+        '400': # Se os dados do formulário estiverem incorretos antes mesmo de verificar o usuário
+          description: Dados de login inválidos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /logout:
+    get:
+      summary: Logout do Usuário
+      description: Encerra a sessão do usuário e redireciona para a página de login.
+      tags:
+        - Autenticação
+      responses:
+        '302':
+          description: Logout bem-sucedido, redirecionado para a página de login.
+          headers:
+            Location:
+              schema:
+                type: string
+              description: URL para a qual o usuário é redirecionado (/login)
+
+  /: # Corresponde a routes.get("/", authMiddleware, TaskController.getAllTasks);
+    get:
+      summary: Lista Todas as Tarefas (Página Principal)
+      description: Obtém e renderiza a lista de todas as tarefas para o usuário logado. (Esta rota retorna HTML). Requer autenticação.
+      tags:
+        - Tarefas
+      security: # Segurança já é global, mas pode ser explicitada
+        - cookieAuth: []
+      responses:
+        '200':
+          description: Lista de tarefas renderizada com sucesso.
+          content:
+            text/html: {} # Indica que a resposta é HTML
+        '302': # Se não estiver autenticado, authMiddleware redireciona
+          description: Não autenticado, redirecionado para a página de login.
+        '500':
+          description: Erro interno do servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /create: # Corresponde a routes.post("/create", authMiddleware, TaskController.createTask);
+    post:
+      summary: Cria uma Nova Tarefa
+      description: Adiciona uma nova tarefa à lista do usuário logado e redireciona para a página principal. Requer autenticação.
+      tags:
+        - Tarefas
+      security:
+        - cookieAuth: []
+      requestBody:
+        required: true
+  
+        content:
+          application/x-www-form-urlencoded: # Comum para formulários HTML
+            schema:
+              $ref: '#/components/schemas/TaskInput' # Aqui `task` é a string da tarefa
+          application/json: # Se você também suportar JSON
+            schema:
+              $ref: '#/components/schemas/TaskInput'
+      responses:
+        '302':
+          description: Tarefa criada com sucesso, redirecionado para a página principal.
+        '500':
+          description: Erro interno do servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /getById/{id}: # Corresponde a routes.get("/getById/:id", authMiddleware, TaskController.getById);
+    get:
+      summary: Obtém uma Tarefa pelo ID (para Edição na Página)
+      description: Busca uma tarefa específica pelo seu ID e renderiza a página principal com os dados da tarefa para edição. Requer autenticação. (Esta rota retorna HTML).
+      tags:
+        - Tarefas
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID da tarefa a ser obtida.
+          schema:
+            type: string # Ou integer, dependendo do formato do seu _id
+      responses:
+        '200':
+          description: Página renderizada com a tarefa para edição.
+          content:
+            text/html: {}
+        '302':
+          description: Não autenticado, redirecionado para a página de login.
+        '500':
+          description: Erro interno do servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /update/{id}: # Corresponde a routes.post("/update/:id", authMiddleware, TaskController.updateTask);
+    post: # Geralmente PUT ou PATCH para atualização, mas sua rota usa POST
+      summary: Atualiza uma Tarefa Existente
+      description: Modifica os dados de uma tarefa existente e redireciona para a página principal. Requer autenticação.
+      tags:
+        - Tarefas
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID da tarefa a ser atualizada.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        description: Dados da tarefa a serem atualizados. Seu código usa `req.body.task` para a nova descrição da tarefa.
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                task: # Apenas o campo 'task' é enviado para atualização, conforme seu controller
+                  type: string
+                  description: Nova descrição da tarefa.
+                  example: "Revisar documentação Swagger"
+          application/json:
+             schema:
+              type: object
+              properties:
+                task:
+                  type: string
+                  description: Nova descrição da tarefa.
+                  example: "Revisar documentação Swagger"
+      responses:
+        '302':
+          description: Tarefa atualizada com sucesso, redirecionado para a página principal.
+        '500':
+          description: Erro interno do servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /delete/{id}: # Corresponde a routes.delete("/delete/:id", authMiddleware, TaskController.deleteTask);
+    delete:
+      summary: Deleta uma Tarefa
+      description: Remove uma tarefa específica da lista. Requer autenticação. (Este endpoint se comporta mais como uma API REST).
+      tags:
+        - Tarefas
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID da tarefa a ser deletada.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Tarefa deletada com sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Tarefa excluída com sucesso."
+        '404':
+          description: Tarefa não encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error' # Ou o schema específico { message: 'Tarefa não encontrada.' }
+        '302':
+          description: Não autenticado, redirecionado para a página de login.
+        '500':
+          description: Erro interno do servidor.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+tags: # Tags para agrupar os endpoints na UI
+  - name: Autenticação
+    description: Operações relacionadas ao login e logout de usuários.
+  - name: Tarefas
+    description: Operações para gerenciar tarefas (criar, listar, atualizar, deletar).
