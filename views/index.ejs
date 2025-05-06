@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>To Do List</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-r from-blue-100 to-purple-200 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-xl bg-white shadow-xl rounded-2xl p-6">
+        <header class="mb-6">
+            <form action="<%= task ? '/update/' + task._id : '/create' %>" method="post" class="flex flex-col sm:flex-row gap-4 items-center">
+                <input
+                    type="text"
+                    name="task"
+                    id="task"
+                    placeholder="Insira uma tarefa"
+                    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400"
+                    <% if (task) { %> value="<%= task.task %>" <% } %>
+                />
+                <button
+                    id="addButton"
+                    type="submit"
+                    class="bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600 transition"
+                >
+                    <%= task ? 'Editar' : 'Adicionar' %>
+                </button>
+                <% if (task) { %>
+                    <a href="/" class="text-sm text-red-500 hover:underline">Cancelar</a>
+                <% } %>
+            </form>
+        </header>
+
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold text-gray-700">Suas tarefas</h2>
+            <a href="/logout" class="text-sm text-red-500 hover:underline">Sair</a>
+        </div>
+
+        <section id="tasks">
+            <ul class="space-y-3">
+                <% tasksList.forEach((task) => { %>
+                    <li class="flex justify-between items-center bg-gray-100 p-3 rounded-lg shadow-sm">
+                        <span class="break-words w-3/4"><%= task.task %> | <%= task.date.toLocaleDateString('pt-BR') %></span>
+                        <div class="flex gap-2 sm:gap-3">
+                            <!-- Ícone de editar -->
+                            <a href="/getById/<%= task._id %>" title="Editar">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-500 hover:text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M11 4H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-5M18.364 5.636a2 2 0 010 2.828L12 15l-3 1 1-3 6.364-6.364a2 2 0 012.828 0z"/>
+                                </svg>
+                            </a>
+                            <!-- Ícone de apagar -->
+                            <button onclick="confirmDelete('<%= task._id %>')" title="Apagar">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-500 hover:text-red-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </li>
+                <% }) %>
+            </ul>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
